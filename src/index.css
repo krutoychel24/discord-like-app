@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#0a0a0a] text-[#ededed] font-sans antialiased overflow-hidden selection:bg-indigo-500/30;
+  }
+}
+
+/* Custom Scrollbar - Strict Design */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-800 rounded-none;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-zinc-600;
+}
+
+#root {
+  @apply w-full h-screen flex flex-col;
+}
+
+@layer utilities {
+  .strict-panel {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(48px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
+    border-radius: 0.75rem;
+  }
+
+  .glow-text {
+    color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    background-image: linear-gradient(to right, #818cf8, #22d3ee);
+    filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));
+  }
+
+  .strict-btn {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    color: inherit;
+  }
+
+  .strict-btn:hover {
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.5);
+  }
+
+  .strict-input {
+    @apply bg-black border border-white/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-zinc-600;
+  }
+}

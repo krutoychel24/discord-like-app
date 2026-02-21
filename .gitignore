@@ -1,24 +1,57 @@
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Dependencies
+node_modules/
 
-# Editor directories and files
+# Build output
+dist/
+dist-ssr/
+build/
+out/
+
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/WixTools/
+*.dmg
+*.AppImage
+*.deb
+*.msi
+*.exe
+!src-tauri/icons/*.ico
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Editor
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
+*.swp
 *.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local dev
+*.local
+.cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# Test artifacts
+coverage/

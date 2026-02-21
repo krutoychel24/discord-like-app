@@ -3,12 +3,12 @@
 <br />
 
 ```
-██████╗ ██╗███████╗ ██████╗ ██████╗ ██████╗ ██████╗
-██╔══██╗██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔══██╗
-██║  ██║██║███████╗██║     ██║   ██║██████╔╝██║  ██║
-██║  ██║██║╚════██║██║     ██║   ██║██╔══██╗██║  ██║
-██████╔╝██║███████║╚██████╗╚██████╔╝██║  ██║██████╔╝
-╚═════╝ ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝
+██████╗ ██╗   ██╗██████╗  █████╗ ██╗  ██╗
+██╔══██╗██║   ██║██╔══██╗██╔══██╗██║ ██╔╝
+██║  ██║██║   ██║██████╔╝███████║█████╔╝ 
+██║  ██║██║   ██║██╔══██╗██╔══██║██╔═██╗ 
+██████╔╝╚██████╔╝██║  ██║██║  ██║██║  ██╗
+╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
 ```
 
 **A Discord-inspired voice & chat client built with Tauri, React and WebRTC.**
@@ -17,7 +17,7 @@
 [![Tauri](https://img.shields.io/badge/Tauri-2.x-FFC131?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-1.x-CE422B?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18.x-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
-[![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPLv3-22c55e?style=flat-square)](LICENSE)
 
 </div>
 
@@ -25,7 +25,7 @@
 
 ## Overview
 
-**Discord** is a fully-featured real-time voice and text communication desktop application. Built on top of [Tauri](https://tauri.app/) for a native shell and a Rust WebSocket server for signaling, it uses browser-native **WebRTC** for encrypted peer-to-peer audio — no third-party STUN or TURN infrastructure required beyond Google's public STUN servers.
+**Durak** is a fully-featured real-time voice and text communication desktop application. Built on top of [Tauri](https://tauri.app/) for a native shell and a Rust WebSocket server for signaling, it uses browser-native **WebRTC** for encrypted peer-to-peer audio — no third-party STUN or TURN infrastructure required beyond Google's public STUN servers.
 
 ---
 
@@ -216,4 +216,4 @@ git push origin feat/your-feature
 
 ## License
 
-MIT © 2026 [krutoychel24](https://github.com/krutoychel24)
+AGPL-3.0 © 2026 [krutoychel24](https://github.com/krutoychel24)

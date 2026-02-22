@@ -50,7 +50,7 @@ export const ServerBar: React.FC = () => {
             {/* DM / Friends */}
             <div className="relative flex justify-center group w-full" title="Друзья">
                 <button
-                    onClick={() => { setActiveServer(null); }}
+                    onClick={() => useAppStore.getState().setActiveServer(null)}
                     className={`w-12 h-12 rounded-[28px] group-hover:rounded-2xl transition-all duration-200 flex items-center justify-center ${activeServerId === null ? 'rounded-2xl bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-indigo-500 hover:text-white'
                         }`}
                 >

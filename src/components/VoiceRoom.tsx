@@ -33,7 +33,7 @@ export const VoiceRoom: React.FC<VoiceRoomProps> = ({ roomId }) => {
   const allChannels = servers.find(s => s.id === activeServerId)?.channels ?? [];
   const currentChannel = allChannels.find((c: { id: string; name: string }) => c.id === roomId) || { name: roomId };
 
-  const { isSpeaking, peerConnectionStates, setMuted, sendChat } = useWebRTC(roomId);
+  const { isSpeaking, peerConnectionStates, setMuted, sendChat, toggleUserMute, mutedUsers } = useWebRTC(roomId);
 
   const [isMuted, setIsMutedState] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
@@ -169,10 +169,15 @@ export const VoiceRoom: React.FC<VoiceRoomProps> = ({ roomId }) => {
                     <div className="relative">
                       <div className={`w-32 h-32 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${connected ? 'border-green-500 shadow-[0_0_14px_rgba(34,197,94,0.3)]' : 'border-yellow-500/40'
                         }`}>
-                        <img src={user.avatar} alt={user.name || '?'} className="w-full h-full object-cover" />
+                        <img src={user.avatar} alt={user.name || '?'} className={`w-full h-full object-cover ${mutedUsers[user.id] ? 'brightness-50' : ''}`} />
                         {!connected && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                             <Loader size={22} className="text-yellow-400 animate-spin" />
+                          </div>
+                        )}
+                        {mutedUsers[user.id] && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none">
+                            <VolumeX size={28} className="text-red-400" />
                           </div>
                         )}
                       </div>
@@ -185,13 +190,6 @@ export const VoiceRoom: React.FC<VoiceRoomProps> = ({ roomId }) => {
                 );
               })}
             </AnimatePresence>
-
-            {usersInRoom.length === 0 && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-zinc-700 text-sm">
-                <p>Ожидание других участников...</p>
-                <p className="text-xs mt-1 text-zinc-800">Поделись ссылкой или попроси друга зайти в канал</p>
-              </motion.div>
-            )}
           </div>
         </div>
 
@@ -235,7 +233,6 @@ export const VoiceRoom: React.FC<VoiceRoomProps> = ({ roomId }) => {
         </div>
       </div>
 
-      {/* Context Menu */}
       <AnimatePresence>
         {contextMenu.user && (
           <UserContextMenu
@@ -243,6 +240,10 @@ export const VoiceRoom: React.FC<VoiceRoomProps> = ({ roomId }) => {
             isSelf={contextMenu.isSelf}
             position={{ x: contextMenu.x, y: contextMenu.y }}
             onClose={() => setContextMenu(c => ({ ...c, user: null }))}
+            onMute={() => {
+              if (contextMenu.user) toggleUserMute(contextMenu.user.id);
+            }}
+            isMuted={mutedUsers[contextMenu.user.id] || false}
           />
         )}
       </AnimatePresence>

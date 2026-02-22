@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Copy, UserPlus, MicOff, VolumeX, UserRound } from 'lucide-react';
+import { Copy, UserPlus, MicOff, VolumeX, UserRound, Edit, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
+import { db } from '../lib/firebase';
+import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 interface Props {
     user: { id: string; name: string; avatar: string } | null;
@@ -9,11 +11,16 @@ interface Props {
     position: { x: number; y: number };
     onClose: () => void;
     onMute?: (userId: string) => void;
+    isMuted?: boolean;
+    onEditMessage?: () => void;
+    onDeleteMessage?: () => void;
 }
 
-export const UserContextMenu: React.FC<Props> = ({ user, isSelf, position, onClose, onMute }) => {
-    const { addFriend, friends } = useAppStore();
+export const UserContextMenu: React.FC<Props> = ({ user, isSelf, position, onClose, onMute, isMuted, onEditMessage, onDeleteMessage }) => {
+    const { currentUser, setViewProfileId } = useAppStore();
     const ref = useRef<HTMLDivElement>(null);
+    const [isFriend, setIsFriend] = React.useState(false);
+    const [requestSent, setRequestSent] = React.useState(false);
 
     useEffect(() => {
         const close = (e: MouseEvent) => {
@@ -25,9 +32,17 @@ export const UserContextMenu: React.FC<Props> = ({ user, isSelf, position, onClo
         return () => { window.removeEventListener('mousedown', close); window.removeEventListener('keydown', closeKey); };
     }, [onClose]);
 
-    if (!user) return null;
+    useEffect(() => {
+        if (!currentUser || !user) return;
+        getDoc(doc(db, 'users', currentUser.id)).then(snap => {
+            if (snap.exists()) {
+                const friends = snap.data().friends || [];
+                setIsFriend(friends.includes(user.id));
+            }
+        });
+    }, [currentUser, user]);
 
-    const isFriend = friends.some(f => f.name.toLowerCase() === user.name.toLowerCase());
+    if (!user) return null;
 
     // Adjust position to stay in viewport
     const adjustedX = Math.min(position.x, window.innerWidth - 210);
@@ -74,35 +89,78 @@ export const UserContextMenu: React.FC<Props> = ({ user, isSelf, position, onClo
             </div>
 
             <div className="px-1.5 pb-1.5 space-y-0.5">
-                <MenuItem icon={UserRound} label="Просмотр профиля" onClick={() => { }} />
+                <MenuItem icon={UserRound} label="Просмотр профиля" onClick={() => setViewProfileId(user.id)} />
 
                 {!isSelf && (
                     <>
                         <div className="h-px bg-white/[0.05] my-1" />
                         <MenuItem
                             icon={UserPlus}
-                            label={isFriend ? 'Уже в друзьях' : 'Добавить в друзья'}
-                            disabled={isFriend}
-                            onClick={() => addFriend(user.name)}
+                            label={isFriend ? 'В друзьях' : requestSent ? 'Запрос отправлен' : 'Добавить в друзья'}
+                            disabled={isFriend || requestSent}
+                            onClick={async () => {
+                                if (!currentUser) return;
+                                try {
+                                    const theirRef = doc(db, 'users', user.id);
+                                    await updateDoc(theirRef, {
+                                        friendRequests: arrayUnion(currentUser.id)
+                                    });
+                                    setRequestSent(true);
+                                } catch (e) {
+                                    console.error("Error sending friend request:", e);
+                                }
+                            }}
                         />
-                        <MenuItem icon={MicOff} label="Заглушить" onClick={() => onMute?.(user.id)} />
-                        <MenuItem icon={VolumeX} label="Откл. звук" onClick={() => { }} />
+                        <MenuItem
+                            icon={isMuted ? VolumeX : MicOff}
+                            label={isMuted ? "Включить звук" : "Заглушить"}
+                            onClick={() => onMute?.(user.id)}
+                        />
                         <div className="h-px bg-white/[0.05] my-1" />
                         <MenuItem
                             icon={Copy}
                             label="Копировать ID"
-                            onClick={() => navigator.clipboard.writeText(user.id)}
+                            onClick={() => {
+                                onClose();
+                                if ('__TAURI__' in window) {
+                                    import('@tauri-apps/plugin-clipboard-manager').then(({ writeText }) => writeText(user.id));
+                                } else {
+                                    navigator.clipboard.writeText(user.id);
+                                }
+                            }}
                         />
                     </>
                 )}
 
                 {isSelf && (
                     <>
+                        {onEditMessage && (
+                            <MenuItem
+                                icon={Edit}
+                                label="Редактировать сообщение"
+                                onClick={() => { onClose(); onEditMessage(); }}
+                            />
+                        )}
+                        {onDeleteMessage && (
+                            <MenuItem
+                                icon={Trash2}
+                                label="Удалить сообщение"
+                                danger
+                                onClick={() => { onClose(); onDeleteMessage(); }}
+                            />
+                        )}
                         <div className="h-px bg-white/[0.05] my-1" />
                         <MenuItem
                             icon={Copy}
                             label="Копировать ID"
-                            onClick={() => navigator.clipboard.writeText(user.id)}
+                            onClick={() => {
+                                onClose();
+                                if ('__TAURI__' in window) {
+                                    import('@tauri-apps/plugin-clipboard-manager').then(({ writeText }) => writeText(user.id));
+                                } else {
+                                    navigator.clipboard.writeText(user.id);
+                                }
+                            }}
                         />
                     </>
                 )}

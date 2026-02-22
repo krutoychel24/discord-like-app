@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mic, Headphones, ShieldCheck, Settings as SettingsIcon, Volume2, Radio, Sliders } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 
@@ -13,8 +13,8 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
             type="button"
             onClick={() => onChange(!checked)}
             className={`relative w-10 h-5 rounded-full border transition-all duration-200 flex items-center flex-shrink-0 ${checked
-                    ? 'bg-indigo-500 border-indigo-500'
-                    : 'bg-zinc-800 border-zinc-700'
+                ? 'bg-indigo-500 border-indigo-500'
+                : 'bg-zinc-800 border-zinc-700'
                 }`}
         >
             <span className={`absolute w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-200 ${checked ? 'left-[22px]' : 'left-[3px]'}`} />
@@ -88,8 +88,8 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${activeTab === tab.id
-                                            ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/20'
-                                            : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+                                        ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/20'
+                                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
                                         }`}
                                 >
                                     <Icon size={14} />
@@ -100,167 +100,176 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                     </nav>
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="flex-1 overflow-y-auto p-6 space-y-6"
+                        >
 
-                        {/* ── ЗВУК ── */}
-                        {activeTab === 'audio' && (
-                            <>
-                                {/* Устройства */}
-                                <section>
-                                    <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <Headphones size={11} /> Устройства
-                                    </p>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="block text-xs text-zinc-400 mb-1.5 font-medium">Микрофон (вход)</label>
-                                            <select
-                                                value={audioSettings.inputDeviceId || ''}
-                                                onChange={e => setAudioSettings({ inputDeviceId: e.target.value || null })}
-                                                className="strict-input w-full py-2.5 text-sm"
-                                            >
-                                                <option value="">Системный по умолчанию</option>
-                                                {inputs.map(d => (
-                                                    <option key={d.deviceId} value={d.deviceId}>
-                                                        {d.label || `Микрофон (${d.deviceId.slice(0, 8)})`}
-                                                    </option>
-                                                ))}
-                                            </select>
+                            {/* ── ЗВУК ── */}
+                            {activeTab === 'audio' && (
+                                <>
+                                    {/* Устройства */}
+                                    <section>
+                                        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <Headphones size={11} /> Устройства
+                                        </p>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-xs text-zinc-400 mb-1.5 font-medium">Микрофон (вход)</label>
+                                                <select
+                                                    value={audioSettings.inputDeviceId || ''}
+                                                    onChange={e => setAudioSettings({ inputDeviceId: e.target.value || null })}
+                                                    className="strict-input w-full py-2.5 text-sm"
+                                                >
+                                                    <option value="">Системный по умолчанию</option>
+                                                    {inputs.map(d => (
+                                                        <option key={d.deviceId} value={d.deviceId}>
+                                                            {d.label || `Микрофон (${d.deviceId.slice(0, 8)})`}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-zinc-400 mb-1.5 font-medium">Динамики / наушники (выход)</label>
+                                                <select
+                                                    value={audioSettings.outputDeviceId || ''}
+                                                    onChange={e => setAudioSettings({ outputDeviceId: e.target.value || null })}
+                                                    className="strict-input w-full py-2.5 text-sm"
+                                                >
+                                                    <option value="">Системный по умолчанию</option>
+                                                    {outputs.map(d => (
+                                                        <option key={d.deviceId} value={d.deviceId}>
+                                                            {d.label || `Динамики (${d.deviceId.slice(0, 8)})`}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
                                         </div>
+                                    </section>
+
+                                    <div className="h-px bg-white/[0.06]" />
+
+                                    {/* Обработка голоса */}
+                                    <section>
+                                        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                            <Sliders size={11} /> Обработка голоса
+                                        </p>
+                                        <p className="text-xs text-zinc-600 mb-4">Применяется при следующем входе в канал</p>
+
+                                        <div className="divide-y divide-white/[0.06]">
+                                            <SettingRow label="Шумодав" description="Фильтрует фоновые шумы (клавиатура, вентилятор, улица)">
+                                                <Toggle
+                                                    checked={audioSettings.noiseSuppression}
+                                                    onChange={v => setAudioSettings({ noiseSuppression: v })}
+                                                />
+                                            </SettingRow>
+                                            <SettingRow label="Эхоподавление" description="Убирает эхо от динамиков попадающее обратно в микрофон">
+                                                <Toggle
+                                                    checked={audioSettings.echoCancellation}
+                                                    onChange={v => setAudioSettings({ echoCancellation: v })}
+                                                />
+                                            </SettingRow>
+                                            <SettingRow label="Автоусиление" description="Автоматически регулирует громкость микрофона">
+                                                <Toggle
+                                                    checked={audioSettings.autoGainControl}
+                                                    onChange={v => setAudioSettings({ autoGainControl: v })}
+                                                />
+                                            </SettingRow>
+                                        </div>
+                                    </section>
+
+                                    <div className="h-px bg-white/[0.06]" />
+
+                                    {/* Громкость микрофона */}
+                                    <section>
+                                        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <Volume2 size={11} /> Уровни
+                                        </p>
+
+                                        <div className="space-y-5">
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-2">
+                                                    <span className="text-zinc-400 font-medium">Громкость микрофона</span>
+                                                    <span className="text-indigo-400 font-bold">{audioSettings.micVolume}%</span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={0}
+                                                    max={200}
+                                                    value={audioSettings.micVolume}
+                                                    onChange={e => setAudioSettings({ micVolume: +e.target.value })}
+                                                    className="w-full h-1 rounded-full accent-indigo-500 cursor-pointer"
+                                                />
+                                                <div className="flex justify-between text-[10px] text-zinc-700 mt-1">
+                                                    <span>Тихо</span><span>Норма</span><span>Громко</span>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-2">
+                                                    <span className="text-zinc-400 font-medium">Порог активации голоса</span>
+                                                    <span className="text-indigo-400 font-bold">{audioSettings.voiceThreshold}</span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={1}
+                                                    max={60}
+                                                    value={audioSettings.voiceThreshold}
+                                                    onChange={e => setAudioSettings({ voiceThreshold: +e.target.value })}
+                                                    className="w-full h-1 rounded-full accent-indigo-500 cursor-pointer"
+                                                />
+                                                <div className="flex justify-between text-[10px] text-zinc-700 mt-1">
+                                                    <span>Всегда</span><span>Нормально</span><span>Только громко</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </>
+                            )}
+
+                            {/* ── АККАУНТ ── */}
+                            {activeTab === 'account' && (
+                                <section>
+                                    <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Профиль</p>
+                                    <div className="flex items-center gap-4 p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl">
+                                        <img src={currentUser?.avatar} alt="Avatar" className="w-14 h-14 rounded-xl border border-white/10" />
                                         <div>
-                                            <label className="block text-xs text-zinc-400 mb-1.5 font-medium">Динамики / наушники (выход)</label>
-                                            <select
-                                                value={audioSettings.outputDeviceId || ''}
-                                                onChange={e => setAudioSettings({ outputDeviceId: e.target.value || null })}
-                                                className="strict-input w-full py-2.5 text-sm"
-                                            >
-                                                <option value="">Системный по умолчанию</option>
-                                                {outputs.map(d => (
-                                                    <option key={d.deviceId} value={d.deviceId}>
-                                                        {d.label || `Динамики (${d.deviceId.slice(0, 8)})`}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <p className="text-base font-bold text-white">{currentUser?.name || '—'}</p>
+                                            <p className="text-xs text-zinc-500 font-mono mt-0.5 break-all">{currentUser?.id || '—'}</p>
+                                            <p className="text-xs text-indigo-400 font-bold mt-1.5">💎 {currentUser?.balance ?? 0} кредитов</p>
                                         </div>
                                     </div>
                                 </section>
+                            )}
 
-                                <div className="h-px bg-white/[0.06]" />
-
-                                {/* Обработка голоса */}
+                            {/* ── БЕЗОПАСНОСТЬ ── */}
+                            {activeTab === 'security' && (
                                 <section>
-                                    <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                        <Sliders size={11} /> Обработка голоса
-                                    </p>
-                                    <p className="text-xs text-zinc-600 mb-4">Применяется при следующем входе в канал</p>
-
-                                    <div className="divide-y divide-white/[0.06]">
-                                        <SettingRow label="Шумодав" description="Фильтрует фоновые шумы (клавиатура, вентилятор, улица)">
-                                            <Toggle
-                                                checked={audioSettings.noiseSuppression}
-                                                onChange={v => setAudioSettings({ noiseSuppression: v })}
-                                            />
-                                        </SettingRow>
-                                        <SettingRow label="Эхоподавление" description="Убирает эхо от динамиков попадающее обратно в микрофон">
-                                            <Toggle
-                                                checked={audioSettings.echoCancellation}
-                                                onChange={v => setAudioSettings({ echoCancellation: v })}
-                                            />
-                                        </SettingRow>
-                                        <SettingRow label="Автоусиление" description="Автоматически регулирует громкость микрофона">
-                                            <Toggle
-                                                checked={audioSettings.autoGainControl}
-                                                onChange={v => setAudioSettings({ autoGainControl: v })}
-                                            />
+                                    <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Шифрование</p>
+                                    <div className="p-5 bg-green-500/5 border border-green-500/20 rounded-xl">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <ShieldCheck size={16} className="text-green-400" />
+                                            <p className="font-bold text-green-400 text-sm">E2EE активно — DTLS/SRTP</p>
+                                        </div>
+                                        <p className="text-xs text-green-600 leading-relaxed">
+                                            Все голосовые потоки зашифрованы по стандарту WebRTC. Промежуточный сервер видит только метаданные сигнализации, но не содержимое звонка.
+                                        </p>
+                                    </div>
+                                    <div className="mt-4 divide-y divide-white/[0.06]">
+                                        <SettingRow label="Предупреждать о незащищённых соединениях" description="Показывать уведомление если соединение деградировало">
+                                            <Toggle checked={true} onChange={() => { }} />
                                         </SettingRow>
                                     </div>
                                 </section>
+                            )}
 
-                                <div className="h-px bg-white/[0.06]" />
-
-                                {/* Громкость микрофона */}
-                                <section>
-                                    <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <Volume2 size={11} /> Уровни
-                                    </p>
-
-                                    <div className="space-y-5">
-                                        <div>
-                                            <div className="flex justify-between text-xs mb-2">
-                                                <span className="text-zinc-400 font-medium">Громкость микрофона</span>
-                                                <span className="text-indigo-400 font-bold">{audioSettings.micVolume}%</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={200}
-                                                value={audioSettings.micVolume}
-                                                onChange={e => setAudioSettings({ micVolume: +e.target.value })}
-                                                className="w-full h-1 rounded-full accent-indigo-500 cursor-pointer"
-                                            />
-                                            <div className="flex justify-between text-[10px] text-zinc-700 mt-1">
-                                                <span>Тихо</span><span>Норма</span><span>Громко</span>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="flex justify-between text-xs mb-2">
-                                                <span className="text-zinc-400 font-medium">Порог активации голоса</span>
-                                                <span className="text-indigo-400 font-bold">{audioSettings.voiceThreshold}</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min={1}
-                                                max={60}
-                                                value={audioSettings.voiceThreshold}
-                                                onChange={e => setAudioSettings({ voiceThreshold: +e.target.value })}
-                                                className="w-full h-1 rounded-full accent-indigo-500 cursor-pointer"
-                                            />
-                                            <div className="flex justify-between text-[10px] text-zinc-700 mt-1">
-                                                <span>Всегда</span><span>Нормально</span><span>Только громко</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-                            </>
-                        )}
-
-                        {/* ── АККАУНТ ── */}
-                        {activeTab === 'account' && (
-                            <section>
-                                <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Профиль</p>
-                                <div className="flex items-center gap-4 p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl">
-                                    <img src={currentUser?.avatar} alt="Avatar" className="w-14 h-14 rounded-xl border border-white/10" />
-                                    <div>
-                                        <p className="text-base font-bold text-white">{currentUser?.name || '—'}</p>
-                                        <p className="text-xs text-zinc-500 font-mono mt-0.5 break-all">{currentUser?.id || '—'}</p>
-                                        <p className="text-xs text-indigo-400 font-bold mt-1.5">💎 {currentUser?.balance ?? 0} кредитов</p>
-                                    </div>
-                                </div>
-                            </section>
-                        )}
-
-                        {/* ── БЕЗОПАСНОСТЬ ── */}
-                        {activeTab === 'security' && (
-                            <section>
-                                <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Шифрование</p>
-                                <div className="p-5 bg-green-500/5 border border-green-500/20 rounded-xl">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <ShieldCheck size={16} className="text-green-400" />
-                                        <p className="font-bold text-green-400 text-sm">E2EE активно — DTLS/SRTP</p>
-                                    </div>
-                                    <p className="text-xs text-green-600 leading-relaxed">
-                                        Все голосовые потоки зашифрованы по стандарту WebRTC. Промежуточный сервер видит только метаданные сигнализации, но не содержимое звонка.
-                                    </p>
-                                </div>
-                                <div className="mt-4 divide-y divide-white/[0.06]">
-                                    <SettingRow label="Предупреждать о незащищённых соединениях" description="Показывать уведомление если соединение деградировало">
-                                        <Toggle checked={true} onChange={() => { }} />
-                                    </SettingRow>
-                                </div>
-                            </section>
-                        )}
-
-                    </div>
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </motion.div>
         </div>

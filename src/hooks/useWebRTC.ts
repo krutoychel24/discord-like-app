@@ -14,7 +14,7 @@ interface RoomUser {
     avatar: string;
 }
 
-export const useWebRTC = (roomId: string | null) => {
+export const useWebRTC = (roomId: string | null, channelType: 'voice' | 'text' = 'voice') => {
     const { currentUser, setUsersInRoom, audioSettings } = useAppStore();
 
     const localStream = useRef<MediaStream | null>(null);
@@ -29,6 +29,7 @@ export const useWebRTC = (roomId: string | null) => {
 
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [peerConnectionStates, setPeerConnectionStates] = useState<Record<string, string>>({});
+    const [mutedUsers, setMutedUsers] = useState<Record<string, boolean>>({});
 
     const userId = currentUser?.id || '';
     const userName = currentUser?.name || '';
@@ -37,6 +38,12 @@ export const useWebRTC = (roomId: string | null) => {
     // --- Mic acquire ---
     const ensureLocalStream = useCallback(async (): Promise<MediaStream> => {
         if (localStream.current) return localStream.current;
+
+        if (channelType === 'text') {
+            const emptyStream = new MediaStream();
+            localStream.current = emptyStream;
+            return emptyStream;
+        }
 
         if (!localStreamReady.current) {
             const constraints: MediaStreamConstraints = {
@@ -79,7 +86,7 @@ export const useWebRTC = (roomId: string | null) => {
         }, 80);
 
         return stream;
-    }, [audioSettings]);
+    }, [audioSettings, channelType]);
 
     // --- Peer state tracking ---
     const updatePeerState = useCallback((peerId: string, state: string) => {
@@ -99,9 +106,22 @@ export const useWebRTC = (roomId: string | null) => {
         stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
         pc.ontrack = (event) => {
-            const audio = new Audio();
+            let audio = document.getElementById(`peer-audio-${targetId}`) as HTMLAudioElement;
+            if (!audio) {
+                audio = new Audio();
+                audio.id = `peer-audio-${targetId}`;
+                audio.setAttribute('data-peer-id', targetId);
+                document.body.appendChild(audio);
+            }
             audio.srcObject = event.streams[0];
             audio.autoplay = true;
+
+            // Apply current mute state if they were already muted previously
+            setMutedUsers(prev => {
+                if (prev[targetId]) audio.muted = true;
+                return prev;
+            });
+
             audio.play().catch(() => { });
         };
 
@@ -157,7 +177,7 @@ export const useWebRTC = (roomId: string | null) => {
 
                 case 'RoomUsers': {
                     const existing: User[] = (msg.users as RoomUser[]).map((u: RoomUser) => ({
-                        id: u.id, name: u.name, avatar: u.avatar, balance: 0,
+                        id: u.id, name: u.name, avatar: u.avatar, balance: 0, isPremium: false,
                     }));
                     setUsersInRoom(existing);
                     for (const u of existing) await createPeerConnection(u.id, true);
@@ -167,7 +187,7 @@ export const useWebRTC = (roomId: string | null) => {
                 case 'UserJoined': {
                     const cur = useAppStore.getState().usersInRoom;
                     if (!cur.find((u: User) => u.id === msg.user_id)) {
-                        setUsersInRoom([...cur, { id: msg.user_id, name: msg.name, avatar: msg.avatar, balance: 0 }]);
+                        setUsersInRoom([...cur, { id: msg.user_id, name: msg.name, avatar: msg.avatar, balance: 0, isPremium: false }]);
                     }
                     await createPeerConnection(msg.user_id, false);
                     break;
@@ -179,18 +199,9 @@ export const useWebRTC = (roomId: string | null) => {
                     peerConnections.current.delete(msg.user_id);
                     peerStates.current.delete(msg.user_id);
                     setPeerConnectionStates({ ...Object.fromEntries(peerStates.current) });
-                    break;
 
-                case 'ChatMessage':
-                    useAppStore.getState().addMessage({
-                        id: `${msg.timestamp}-${msg.user_id}`,
-                        userId: msg.user_id,
-                        name: msg.name,
-                        avatar: msg.avatar,
-                        text: msg.text,
-                        timestamp: msg.timestamp,
-                        isSelf: msg.user_id === userId,
-                    });
+                    const audioEl = document.getElementById(`peer-audio-${msg.user_id}`);
+                    if (audioEl) audioEl.remove();
                     break;
 
                 case 'Offer': {
@@ -237,7 +248,11 @@ export const useWebRTC = (roomId: string | null) => {
             ws.current?.close();
             ws.current = null;
             setUsersInRoom([]);
-            peerConnections.current.forEach((pc: RTCPeerConnection) => pc.close());
+            peerConnections.current.forEach((pc: RTCPeerConnection, id: string) => {
+                pc.close();
+                const audioEl = document.getElementById(`peer-audio-${id}`);
+                if (audioEl) audioEl.remove();
+            });
             peerConnections.current.clear();
             peerStates.current.clear();
             if (voiceActivityInterval.current) clearInterval(voiceActivityInterval.current);
@@ -264,11 +279,38 @@ export const useWebRTC = (roomId: string | null) => {
         }
     }, []);
 
+    const editMessage = useCallback((messageId: string, newText: string) => {
+        if (ws.current?.readyState === WebSocket.OPEN) {
+            ws.current.send(JSON.stringify({ type: 'EditMessage', message_id: messageId, new_text: newText }));
+        }
+    }, []);
+
+    const deleteMessage = useCallback((messageId: string) => {
+        if (ws.current?.readyState === WebSocket.OPEN) {
+            ws.current.send(JSON.stringify({ type: 'DeleteMessage', message_id: messageId }));
+        }
+    }, []);
+
     const purchaseItem = useCallback((itemId: string, price: number) => {
         if (ws.current?.readyState === WebSocket.OPEN) {
             ws.current.send(JSON.stringify({ type: 'MarketPurchase', user_id: userId, item_id: itemId, price }));
         }
     }, [userId]);
 
-    return { isSpeaking, peerConnectionStates, setMuted, sendChat, purchaseItem };
+    const toggleUserMute = useCallback((targetId: string) => {
+        setMutedUsers(prev => {
+            const isTargetMuted = !prev[targetId];
+            const next = { ...prev, [targetId]: isTargetMuted };
+
+            // Find the audio element for this user and apply mute
+            const audioElements = document.querySelectorAll(`audio[data-peer-id="${targetId}"]`);
+            audioElements.forEach(el => {
+                (el as HTMLAudioElement).muted = isTargetMuted;
+            });
+
+            return next;
+        });
+    }, []);
+
+    return { isSpeaking, peerConnectionStates, setMuted, sendChat, editMessage, deleteMessage, purchaseItem, toggleUserMute, mutedUsers };
 };
